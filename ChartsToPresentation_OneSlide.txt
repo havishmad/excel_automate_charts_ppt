@@ -1,0 +1,44 @@
+Sub ChartsToPresentation_OneSlide()
+' Set a VBE reference to Microsoft PowerPoint Object Library
+
+Dim ppApp As PowerPoint.Application
+Dim PPPres As PowerPoint.Presentation
+Dim ppSlide As PowerPoint.Slide
+Dim ppShape
+Dim PresentationFileName As Variant
+Dim SlideCount As Long
+Dim iCht As Integer
+Dim aryLeft
+
+aryLeft = Array(100, 200, 300) '<<<<<<<< adjust to fit
+
+' Reference existing instance of PowerPoint
+Set ppApp = GetObject(, "Powerpoint.Application")
+' Reference active presentation
+Set PPPres = ppApp.ActivePresentation
+ppApp.ActiveWindow.ViewType = ppViewSlide
+
+For iCht = 1 To ActiveSheet.ChartObjects.Count
+' copy chart as a picture
+ActiveSheet.ChartObjects(iCht).Chart.CopyPicture _
+Appearance:=xlScreen, Size:=xlScreen, Format:=xlPicture
+
+' Add a new slide and paste in the chart
+SlideCount = PPPres.Slides.Count
+With PPPres.Slides(ppApp.ActiveWindow.Selection.SlideRange.SlideIndex)
+' paste and select the chart picture
+Set ppShape = .Shapes.Paste
+ppShape.Left = aryLeft(iCht - 1)
+ppShape.Align msoAlignMiddles, True
+End With
+
+Next
+
+' Clean up
+Set ppShape = Nothing
+Set ppSlide = Nothing
+Set PPPres = Nothing
+Set ppApp = Nothing
+
+End Sub
+

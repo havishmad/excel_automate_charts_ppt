@@ -1,0 +1,78 @@
+Sub ChartsToPresentation_SelectedCharts()
+''' COPY SELECTED EXCEL CHARTS INTO POWERPOINT
+' Set a VBE reference to Microsoft PowerPoint Object Library
+
+Dim pptApp As PowerPoint.Application
+Dim iShapeIx As Integer, iShapeCt As Integer
+Dim myShape As Shape, myChart As ChartObject
+Dim bCopied As Boolean
+
+Set pptApp = GetObject(, "PowerPoint.Application")
+
+If ActiveChart Is Nothing Then
+    ''' SELECTION IS NOT A SINGLE CHART
+    On Error Resume Next
+    iShapeCt = Selection.ShapeRange.Count
+    If Err Then
+        MsgBox "Select charts and try again", vbCritical, "Nothing Selected"
+        Exit Sub
+    End If
+    On Error GoTo 0
+    For Each myShape In Selection.ShapeRange
+        ''' IS SHAPE A CHART?
+        On Error Resume Next
+        Set myChart = ActiveSheet.ChartObjects(myShape.Name)
+        If Not Err Then
+            bCopied = CopyChartToPowerPoint(pptApp, myChart)
+        End If
+        On Error GoTo 0
+    Next
+Else
+    ''' CHART ELEMENT OR SINGLE CHART IS SELECTED
+    Set myChart = ActiveChart.Parent
+    bCopied = CopyChartToPowerPoint(pptApp, myChart)
+End If
+
+Dim myPptShape As PowerPoint.Shape
+Dim myScale As Single
+Dim iShapesCt As Integer
+
+''' BAIL OUT IF NO PICTURES ON SLIDE
+On Error Resume Next
+iShapesCt = pptApp.ActiveWindow.Selection.SlideRange.Shapes.Count
+If Err Then
+    MsgBox "There are no shapes on the active slide", vbCritical, "No Shapes"
+    Exit Sub
+End If
+On Error GoTo 0
+
+''' ASK USER FOR SCALING FACTOR
+myScale = InputBox(Prompt:="Enter a scaling factor for the shapes (percent)", _
+    Title:="Enter Scaling Percentage") / 100
+
+''' LOOP THROUGH SHAPES AND RESCALE "PICTURES"
+For Each myPptShape In pptApp.ActiveWindow.Selection.SlideRange.Shapes
+    If myPptShape.Name Like "Picture*" Then
+        With myPptShape
+            .ScaleWidth myScale, msoTrue, msoScaleFromMiddle
+            .ScaleHeight myScale, msoTrue, msoScaleFromMiddle
+        End With
+    End If
+Next
+
+Set myChart = Nothing
+Set myShape = Nothing
+Set myPptShape = Nothing
+Set pptApp = Nothing
+End Sub
+
+Function CopyChartToPowerPoint(oPPtApp As PowerPoint.Application, _
+    oChart As ChartObject)
+CopyChartToPowerPoint = False
+
+oChart.Chart.CopyPicture Appearance:=xlScreen, Format:=xlPicture, Size:=xlScreen
+oPPtApp.ActiveWindow.View.Paste
+
+CopyChartToPowerPoint = True
+End Function
+
